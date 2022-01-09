@@ -6,9 +6,12 @@
 #include <Wire.h>
 #include <ThingESP.h>
 
+//definedn
 #define OKLED D8
 #define ERRLED D7
+#define LED D5
 
+//Objects
 Adafruit_SSD1306 oled(128, 64, &Wire, -1);
 ThingESP8266 thing("CustomerLedps", "NodeMCU", "987654321");
 
@@ -22,10 +25,12 @@ String WIFI_CON = "Connected to ";
 String ssid = "Totalplay-DCA5";
 String passwd = "DCA5C964HNZZjpcn";
 
-
+//ints
 int x;
 int minX;
 int counter = 0;
+
+//boolean
 bool connectd;
 
 void setup(){
@@ -34,6 +39,7 @@ void setup(){
   //For indicator leds
   pinMode(OKLED, OUTPUT);
   pinMode(ERRLED, OUTPUT);
+  pinMode(LED, OUTPUT);
 
   Wire.begin(D4, D3);
   oled.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -46,7 +52,7 @@ void setup(){
   //For wifi settings
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, passwd);
-  while(WiFi.status() != WL_CONNECTED && counter < 5){
+  while(WiFi.status() != WL_CONNECTED && counter < 15){
     ++counter;
     oled.setTextSize(1);
     oled.setCursor(34, 15);
@@ -66,6 +72,8 @@ void setup(){
   if(WiFi.status() == WL_CONNECTED){
     minX = -6 * (WIFI_CON.length() + ssid.length());
     connectd = true;
+    thing.initDevice();
+    delay(50);
   }else{
     minX = -6 * (WIFI_DIS.length() + ssid.length());
     connectd = false;
@@ -93,9 +101,27 @@ void loop(){
     oled.display();
   }
 
+  //Handle whatsapp query
+  thing.Handle();
+
   //For text Scrolling
   x = x - 1;
   if(x < minX) x = oled.width();
+}
+
+//Handle Whatsapp query
+String HandleResponse(String query){
+  if(query == "led on"){
+    digitalWrite(LED, HIGH);
+    return "Led(D5) : ON";
+  }else if(query == "led off"){
+    digitalWrite(LED, LOW);
+    return "LED(D5) : OFF";
+  }else if(query == "led status"){
+    return digitalRead(LED) ? "[STATUS] Led(D5) :: ON" : "[STATUS] Led(D5) :: OFF";     
+  }else{
+    return "\' " + query + " \'" + " :: " + "Unknown command";
+  }
 }
 
 void correct(){
